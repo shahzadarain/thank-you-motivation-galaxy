@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,8 +53,9 @@ function isValidSummaryData(data: unknown): data is { rankings: RankingData[] } 
 }
 
 const Dashboard = () => {
-  const [startDate, setStartDate] = useState(subWeeks(new Date(), 4));
-  const [endDate, setEndDate] = useState(new Date());
+  // Initialize with a wider date range to ensure we catch our sample data
+  const [startDate, setStartDate] = useState(new Date(2024, 0, 1)); // January 1, 2024
+  const [endDate, setEndDate] = useState(new Date(2024, 11, 31)); // December 31, 2024
   const [selectedMember, setSelectedMember] = useState<string>('all');
   const { toast } = useToast();
 
@@ -63,6 +63,8 @@ const Dashboard = () => {
     queryKey: ['rankings', startDate, endDate],
     queryFn: async () => {
       console.log('Fetching rankings data...'); // Debug log
+      console.log('Date range:', { startDate, endDate }); // Debug log for date range
+
       const { data, error } = await supabase
         .from('weekly_rankings_summary')
         .select('*')
@@ -71,7 +73,7 @@ const Dashboard = () => {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Supabase query error:', error); // Debug log
+        console.error('Supabase query error:', error);
         toast({
           variant: "destructive",
           title: "Error loading dashboard data",
@@ -80,7 +82,7 @@ const Dashboard = () => {
         throw error;
       }
 
-      console.log('Received data:', data); // Debug log
+      console.log('Received data:', data);
 
       // Transform the data to match our WeeklySummary interface
       return (data as SupabaseWeeklySummary[]).map(item => {
