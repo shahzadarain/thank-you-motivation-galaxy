@@ -21,19 +21,29 @@ const FunFact: React.FC<FunFactProps> = ({ questionNumber }) => {
   const fetchFunFact = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://numbersapi.com/${questionNumber}/trivia`);
-      const fact = await response.text();
+      // Using a secure API endpoint
+      const response = await fetch(`https://api.math.tools/numbers/nod/${questionNumber}`);
+      const data = await response.json();
       
       toast({
         title: "Did you know? 🤔",
-        description: fact,
+        description: `${questionNumber} is ${data.contents.translation}`,
         duration: 5000,
       });
     } catch (error) {
+      // Fallback to a predefined fact if API fails
+      const facts = [
+        "Did you know? Taking breaks while filling forms helps maintain focus!",
+        "Fun fact: Deep breathing can help reduce stress while answering questions.",
+        "Interesting! Writing down thoughts can boost memory and creativity.",
+        "Quick tip: Stretching between questions can improve your concentration!",
+        "Did you know? Your brain processes information better when you're relaxed.",
+      ];
+      
       toast({
-        title: "Oops!",
-        description: "Couldn't fetch a fun fact right now. Try again later!",
-        variant: "destructive",
+        title: "Here's something interesting! 💡",
+        description: facts[Math.floor(Math.random() * facts.length)],
+        duration: 5000,
       });
     } finally {
       setIsLoading(false);
