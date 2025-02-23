@@ -38,21 +38,24 @@ const Auth = () => {
         const timestamp = Date.now();
         const email = `anonymous.${timestamp}@temp-mail.org`;
         
-        // First sign up the user and automatically sign in
-        const { data: { session }, error } = await supabase.auth.signUp({
+        // First try to sign up
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email: email,
           password: ACCESS_CODE,
-          options: {
-            data: {
-              access_code: ACCESS_CODE
-            }
-          }
         });
 
-        if (error) throw error;
+        if (signUpError) throw signUpError;
 
-        if (!session) {
-          throw new Error('Unable to sign in automatically. Please try again.');
+        // Always attempt to sign in explicitly
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: ACCESS_CODE,
+        });
+
+        if (signInError) throw signInError;
+
+        if (!signInData.session) {
+          throw new Error('Failed to create session. Please try again.');
         }
 
         // Set the authentication flag in sessionStorage
@@ -74,6 +77,7 @@ const Auth = () => {
         description: error.message,
         variant: "destructive",
       });
+      console.error('Authentication error:', error);
     } finally {
       setLoading(false);
     }
