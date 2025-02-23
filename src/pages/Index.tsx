@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import QuestionForm from '@/components/QuestionForm';
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import FunFact from '@/components/FunFact';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -40,6 +42,51 @@ const Index = () => {
       );
       
       handleAnswerChange(newOrder);
+    }
+  };
+
+  const saveWeeklyRankings = async () => {
+    const date = new Date();
+    const weekNumber = Math.ceil((date.getDate() - 1 + new Date(date.getFullYear(), date.getMonth(), 1).getDay()) / 7);
+    const year = date.getFullYear();
+
+    // Transform the ranking data
+    const rankings = (answers[15] as string[] || []).map((member, index) => ({
+      member,
+      average_rank: index + 1,
+      total_votes: 1
+    }));
+
+    const summaryData = {
+      rankings
+    };
+
+    try {
+      const { error } = await supabase
+        .from('weekly_rankings_summary')
+        .insert([
+          {
+            week_number: weekNumber,
+            year: year,
+            summary_data: summaryData
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "🎉 Thank you for your feedback!",
+        description: "Your response has been recorded successfully.",
+      });
+      setAnswers({});
+      setCurrentStep(0);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to save your response. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error saving rankings:', error);
     }
   };
 
@@ -119,13 +166,7 @@ const Index = () => {
                       if (currentStep < questions.length - 1) {
                         setCurrentStep(prev => prev + 1);
                       } else {
-                        console.log('Form submitted:', answers);
-                        toast({
-                          title: "🎉 Thank you for your feedback!",
-                          description: "Your response has been recorded successfully.",
-                        });
-                        setAnswers({});
-                        setCurrentStep(0);
+                        saveWeeklyRankings();
                       }
                     }}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
