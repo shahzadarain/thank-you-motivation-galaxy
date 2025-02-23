@@ -40,6 +40,19 @@ interface SupabaseWeeklySummary {
   summary_data: Json;
 }
 
+// Type guard to check if the object is a valid summary data structure
+function isValidSummaryData(data: unknown): data is { rankings: RankingData[] } {
+  if (!data || typeof data !== 'object') return false;
+  const obj = data as any;
+  return Array.isArray(obj.rankings) && 
+         obj.rankings.every((r: any) => 
+           typeof r === 'object' && 
+           typeof r.member === 'string' && 
+           typeof r.average_rank === 'number' && 
+           typeof r.total_votes === 'number'
+         );
+}
+
 const Dashboard = () => {
   const [startDate, setStartDate] = useState(subWeeks(new Date(), 4));
   const [endDate, setEndDate] = useState(new Date());
@@ -58,12 +71,26 @@ const Dashboard = () => {
       if (error) throw error;
 
       // Transform the data to match our WeeklySummary interface
-      return (data as SupabaseWeeklySummary[]).map(item => ({
-        ...item,
-        summary_data: typeof item.summary_data === 'string' 
-          ? JSON.parse(item.summary_data)
-          : item.summary_data as WeeklySummary['summary_data']
-      }));
+      return (data as SupabaseWeeklySummary[]).map(item => {
+        let parsedData: unknown;
+        
+        if (typeof item.summary_data === 'string') {
+          try {
+            parsedData = JSON.parse(item.summary_data);
+          } catch {
+            parsedData = { rankings: [] };
+          }
+        } else {
+          parsedData = item.summary_data;
+        }
+
+        return {
+          ...item,
+          summary_data: isValidSummaryData(parsedData) 
+            ? parsedData 
+            : { rankings: [] }
+        };
+      });
     },
   });
 
