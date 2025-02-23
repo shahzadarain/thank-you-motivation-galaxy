@@ -15,12 +15,28 @@ import RankingSummary from '@/components/dashboard/RankingSummary';
 import DateRangeFilter from '@/components/dashboard/DateRangeFilter';
 import { addWeeks, subWeeks } from 'date-fns';
 
+interface RankingData {
+  member: string;
+  average_rank: number;
+  total_votes: number;
+}
+
+interface WeeklySummary {
+  id: string;
+  week_number: number;
+  year: number;
+  created_at: string;
+  summary_data: {
+    rankings: RankingData[];
+  };
+}
+
 const Dashboard = () => {
   const [startDate, setStartDate] = useState(subWeeks(new Date(), 4));
   const [endDate, setEndDate] = useState(new Date());
   const [selectedMember, setSelectedMember] = useState<string>('all');
 
-  const { data: rankingData, isLoading } = useQuery({
+  const { data: rankingData, isLoading } = useQuery<WeeklySummary[]>({
     queryKey: ['rankings', startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -46,7 +62,7 @@ const Dashboard = () => {
 
   const teamMembers = Array.from(
     new Set(rankingData?.flatMap(week => 
-      week.summary_data.rankings.map((r: any) => r.member)
+      week.summary_data.rankings.map(r => r.member)
     ))
   );
 
@@ -54,7 +70,7 @@ const Dashboard = () => {
     weekNumber: week.week_number,
     rankings: selectedMember === 'all' 
       ? week.summary_data.rankings
-      : week.summary_data.rankings.filter((r: any) => r.member === selectedMember),
+      : week.summary_data.rankings.filter(r => r.member === selectedMember),
   }));
 
   const currentWeekData = rankingData?.[rankingData.length - 1]?.summary_data.rankings || [];
@@ -102,7 +118,7 @@ const Dashboard = () => {
           <CardContent className="text-3xl font-bold">
             {selectedMember === 'all' 
               ? 'Select a member'
-              : currentWeekData.find((r: any) => r.member === selectedMember)?.average_rank.toFixed(2) || 'N/A'
+              : currentWeekData.find(r => r.member === selectedMember)?.average_rank.toFixed(2) || 'N/A'
             }
           </CardContent>
         </Card>
@@ -113,8 +129,8 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="text-3xl font-bold">
             {selectedMember === 'all'
-              ? currentWeekData.reduce((acc: number, curr: any) => acc + curr.total_votes, 0)
-              : currentWeekData.find((r: any) => r.member === selectedMember)?.total_votes || 0
+              ? currentWeekData.reduce((acc, curr) => acc + curr.total_votes, 0)
+              : currentWeekData.find(r => r.member === selectedMember)?.total_votes || 0
             }
           </CardContent>
         </Card>
