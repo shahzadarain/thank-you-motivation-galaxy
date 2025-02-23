@@ -38,21 +38,22 @@ const Auth = () => {
         const timestamp = Date.now();
         const email = `anonymous.${timestamp}@temp-mail.org`;
         
-        // First sign up the user
-        const { error: signUpError } = await supabase.auth.signUp({
+        // First sign up the user and automatically sign in
+        const { data: { session }, error } = await supabase.auth.signUp({
           email: email,
           password: ACCESS_CODE,
+          options: {
+            data: {
+              access_code: ACCESS_CODE
+            }
+          }
         });
 
-        if (signUpError) throw signUpError;
+        if (error) throw error;
 
-        // Then sign in
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: ACCESS_CODE,
-        });
-
-        if (signInError) throw signInError;
+        if (!session) {
+          throw new Error('Unable to sign in automatically. Please try again.');
+        }
 
         // Set the authentication flag in sessionStorage
         sessionStorage.setItem('isAuthenticated', 'true');
