@@ -1,205 +1,26 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  RadioGroup,
-  RadioGroupItem
-} from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-
-interface Question {
-  id: number;
-  englishText: string;
-  arabicText: string;
-  type: 'text' | 'radio' | 'rating' | 'ranking';
-  options?: string[];
-  teamMembers?: string[];
-}
-
-interface SortableItemProps {
-  id: string;
-  children: React.ReactNode;
-}
-
-const SortableItem = ({ id, children }: SortableItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="bg-white p-3 mb-2 rounded-lg shadow-sm cursor-move hover:bg-gray-50 transition-colors duration-200"
-    >
-      {children}
-    </div>
-  );
-};
-
-const questions: Question[] = [
-  {
-    id: 1,
-    englishText: "To whom do you want to say 'Thank you' today and why?",
-    arabicText: "لمن تريد أن تقول 'شكراً' اليوم ولماذا؟",
-    type: 'text'
-  },
-  {
-    id: 2,
-    englishText: "Are you motivated?",
-    arabicText: "هل أنت متحمس؟",
-    type: 'radio',
-    options: ['Yes', 'No']
-  },
-  {
-    id: 3,
-    englishText: "What is something that makes you motivated?",
-    arabicText: "ما الذي يجعلك متحمساً؟",
-    type: 'text'
-  },
-  {
-    id: 4,
-    englishText: "Does the DAG team communicate effectively with ideas and updates?",
-    arabicText: "هل يتواصل فريق DAG بشكل فعال مع الأفكار والتحديثات؟",
-    type: 'text'
-  },
-  {
-    id: 5,
-    englishText: "If you could change something in the DAG environment, what would it be?",
-    arabicText: "إذا كان بإمكانك تغيير شيء في بيئة DAG، ماذا سيكون؟",
-    type: 'text'
-  },
-  {
-    id: 6,
-    englishText: "Do you have suggestions for monthly/Bi-weekly team activities?",
-    arabicText: "هل لديك اقتراحات لأنشطة الفريق الشهرية/نصف الشهرية؟",
-    type: 'text'
-  },
-  {
-    id: 7,
-    englishText: "How much enjoyable is it to work with your team members?",
-    arabicText: "ما مدى متعة العمل مع أعضاء فريقك؟",
-    type: 'text'
-  },
-  {
-    id: 8,
-    englishText: "Team gathering outside?",
-    arabicText: "تجمع الفريق خارج العمل؟",
-    type: 'radio',
-    options: ['Yes', 'No', 'Suggest']
-  },
-  {
-    id: 9,
-    englishText: "What challenges did you face in your work this week, and how might we adjust our approach to address them?",
-    arabicText: "ما التحديات التي واجهتها في عملك هذا الأسبوع، وكيف يمكننا تعديل نهجنا لمعالجتها؟",
-    type: 'text'
-  },
-  {
-    id: 10,
-    englishText: "How well did our team communication work over the past week? What changes would you suggest?",
-    arabicText: "ما مدى نجاح تواصل فريقنا خلال الأسبوع الماضي؟ ما التغييرات التي تقترحها؟",
-    type: 'text'
-  },
-  {
-    id: 11,
-    englishText: "Were there any moments when you felt stuck or unsupported this week? If so, what would have helped you?",
-    arabicText: "هل كانت هناك لحظات شعرت فيها بالعجز أو عدم الدعم هذا الأسبوع؟ إذا كان الأمر كذلك، ما الذي كان يمكن أن يساعدك؟",
-    type: 'text'
-  },
-  {
-    id: 12,
-    englishText: "What improvements could be made to our processes or workflows to increase our effectiveness this week?",
-    arabicText: "ما التحسينات التي يمكن إدخالها على عملياتنا أو سير العمل لزيادة فعاليتنا هذا الأسبوع؟",
-    type: 'text'
-  },
-  {
-    id: 13,
-    englishText: "How can I, as your manager, adjust my actions or decisions to support the team better?",
-    arabicText: "كيف يمكنني، بصفتي مديرك، تعديل أفعالي أو قراراتي لدعم الفريق بشكل أفضل؟",
-    type: 'text'
-  },
-  {
-    id: 14,
-    englishText: "Is there anything else from this week that you believe we should discuss to enhance our team performance?",
-    arabicText: "هل هناك أي شيء آخر من هذا الأسبوع تعتقد أنه يجب أن نناقشه لتحسين أداء فريقنا؟",
-    type: 'text'
-  },
-  {
-    id: 15,
-    englishText: "Rank your teammates based on who you enjoy working with the most (drag to reorder)",
-    arabicText: "رتب زملائك حسب من تستمتع بالعمل معهم أكثر (اسحب لإعادة الترتيب)",
-    type: 'ranking',
-    teamMembers: ['Shahzad', 'Dana', 'Iyad', 'Alaa', 'Ahmed', 'Joey', 'Khalid', 'Maysa', 'Jaber']
-  }
-];
+import { arrayMove } from '@dnd-kit/sortable';
+import { questions } from '@/constants/questions';
+import QuestionForm from '@/components/QuestionForm';
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
   const { toast } = useToast();
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
+  const currentQuestion = questions[currentStep];
   const progress = ((currentStep + 1) / questions.length) * 100;
 
-  const handleNext = () => {
-    if (currentStep < questions.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      handleSubmit();
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
-  const handleSubmit = () => {
-    console.log('Form submitted:', answers);
-    toast({
-      title: "Thank you for your feedback!",
-      description: "Your response has been recorded successfully.",
-      duration: 5000,
-    });
-    setAnswers({});
-    setCurrentStep(0);
+  const handleAnswerChange = (value: string | string[]) => {
+    setAnswers(prev => ({
+      ...prev,
+      [currentQuestion.id]: value
+    }));
   };
 
   const handleDragEnd = (event: any) => {
@@ -217,14 +38,9 @@ const Index = () => {
         newIndex
       );
       
-      setAnswers(prev => ({
-        ...prev,
-        [currentQuestion.id]: newOrder
-      }));
+      handleAnswerChange(newOrder);
     }
   };
-
-  const currentQuestion = questions[currentStep];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -251,66 +67,40 @@ const Index = () => {
             </div>
 
             <div className="space-y-4">
-              {currentQuestion.type === 'text' ? (
-                <Textarea
-                  value={answers[currentQuestion.id] as string || ''}
-                  onChange={(e) => setAnswers(prev => ({
-                    ...prev,
-                    [currentQuestion.id]: e.target.value
-                  }))}
-                  className="min-h-[100px]"
-                  placeholder="Type your answer here..."
-                />
-              ) : currentQuestion.type === 'radio' && currentQuestion.options ? (
-                <RadioGroup
-                  value={answers[currentQuestion.id] as string}
-                  onValueChange={(value) => setAnswers(prev => ({
-                    ...prev,
-                    [currentQuestion.id]: value
-                  }))}
-                >
-                  {currentQuestion.options.map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <RadioGroupItem value={option} id={option} />
-                      <Label htmlFor={option}>{option}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              ) : currentQuestion.type === 'ranking' && currentQuestion.teamMembers ? (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={answers[currentQuestion.id] as string[] || currentQuestion.teamMembers}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {(answers[currentQuestion.id] as string[] || currentQuestion.teamMembers).map((member, index) => (
-                        <SortableItem key={member} id={member}>
-                          <div className="flex items-center">
-                            <span className="mr-3 text-gray-500">{index + 1}.</span>
-                            <span>{member}</span>
-                          </div>
-                        </SortableItem>
-                      ))}
-                    </SortableContext>
-                  </DndContext>
-                </div>
-              ) : null}
+              <QuestionForm
+                question={currentQuestion}
+                answer={answers[currentQuestion.id] || ''}
+                onAnswerChange={handleAnswerChange}
+                onDragEnd={handleDragEnd}
+              />
             </div>
 
             <div className="flex justify-between pt-6">
               <Button
                 variant="outline"
-                onClick={handlePrevious}
+                onClick={() => {
+                  if (currentStep > 0) {
+                    setCurrentStep(prev => prev - 1);
+                  }
+                }}
                 disabled={currentStep === 0}
               >
                 Previous
               </Button>
               <Button
-                onClick={handleNext}
+                onClick={() => {
+                  if (currentStep < questions.length - 1) {
+                    setCurrentStep(prev => prev + 1);
+                  } else {
+                    console.log('Form submitted:', answers);
+                    toast({
+                      title: "Thank you for your feedback!",
+                      description: "Your response has been recorded successfully.",
+                    });
+                    setAnswers({});
+                    setCurrentStep(0);
+                  }
+                }}
               >
                 {currentStep === questions.length - 1 ? "Submit" : "Next"}
               </Button>
