@@ -45,30 +45,23 @@ const Index = () => {
     }
   };
 
-  const saveWeeklyRankings = async () => {
+  const saveTeamFeedback = async () => {
     const date = new Date();
     const weekNumber = Math.ceil((date.getDate() - 1 + new Date(date.getFullYear(), date.getMonth(), 1).getDay()) / 7);
     const year = date.getFullYear();
 
-    // Transform the ranking data
-    const rankings = (answers[15] as string[] || []).map((member, index) => ({
-      member,
-      average_rank: index + 1,
-      total_votes: 1
-    }));
-
-    const summaryData = {
-      rankings
-    };
-
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { error } = await supabase
-        .from('weekly_rankings_summary')
+        .from('team_feedback')
         .insert([
           {
+            user_id: user.id,
             week_number: weekNumber,
             year: year,
-            summary_data: summaryData
+            responses: answers
           }
         ]);
 
@@ -86,7 +79,7 @@ const Index = () => {
         description: "Failed to save your response. Please try again.",
         variant: "destructive",
       });
-      console.error('Error saving rankings:', error);
+      console.error('Error saving feedback:', error);
     }
   };
 
@@ -166,7 +159,7 @@ const Index = () => {
                       if (currentStep < questions.length - 1) {
                         setCurrentStep(prev => prev + 1);
                       } else {
-                        saveWeeklyRankings();
+                        saveTeamFeedback();
                       }
                     }}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
