@@ -83,7 +83,7 @@ const Index = () => {
         .from('team_feedback')
         .insert([
           {
-            user_id: 'anonymous', // Since we're using access code auth
+            user_id: '00000000-0000-0000-0000-000000000000', // Using a default UUID for anonymous users
             week_number: weekNumber,
             year: year,
             responses: answers
