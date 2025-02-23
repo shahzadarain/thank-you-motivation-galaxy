@@ -13,7 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import RankingTrends from '@/components/dashboard/RankingTrends';
 import RankingSummary from '@/components/dashboard/RankingSummary';
 import DateRangeFilter from '@/components/dashboard/DateRangeFilter';
-import { addWeeks, subWeeks } from 'date-fns';
+import { subWeeks } from 'date-fns';
+import { Json } from '@/integrations/supabase/types';
 
 interface RankingData {
   member: string;
@@ -29,6 +30,14 @@ interface WeeklySummary {
   summary_data: {
     rankings: RankingData[];
   };
+}
+
+interface SupabaseWeeklySummary {
+  id: string;
+  week_number: number;
+  year: number;
+  created_at: string;
+  summary_data: Json;
 }
 
 const Dashboard = () => {
@@ -47,7 +56,14 @@ const Dashboard = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data;
+
+      // Transform the data to match our WeeklySummary interface
+      return (data as SupabaseWeeklySummary[]).map(item => ({
+        ...item,
+        summary_data: typeof item.summary_data === 'string' 
+          ? JSON.parse(item.summary_data)
+          : item.summary_data as WeeklySummary['summary_data']
+      }));
     },
   });
 
@@ -62,8 +78,8 @@ const Dashboard = () => {
 
   const teamMembers = Array.from(
     new Set(rankingData?.flatMap(week => 
-      week.summary_data.rankings.map(r => r.member)
-    ))
+      (week.summary_data.rankings || []).map(r => r.member)
+    ) ?? [])
   );
 
   const filteredData = rankingData?.map(week => ({
@@ -71,9 +87,9 @@ const Dashboard = () => {
     rankings: selectedMember === 'all' 
       ? week.summary_data.rankings
       : week.summary_data.rankings.filter(r => r.member === selectedMember),
-  }));
+  })) ?? [];
 
-  const currentWeekData = rankingData?.[rankingData.length - 1]?.summary_data.rankings || [];
+  const currentWeekData = rankingData?.[rankingData.length - 1]?.summary_data.rankings ?? [];
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -101,7 +117,7 @@ const Dashboard = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Members</SelectItem>
-                {teamMembers.map(member => (
+                {teamMembers.map((member) => (
                   <SelectItem key={member} value={member}>
                     {member}
                   </SelectItem>
@@ -118,7 +134,7 @@ const Dashboard = () => {
           <CardContent className="text-3xl font-bold">
             {selectedMember === 'all' 
               ? 'Select a member'
-              : currentWeekData.find(r => r.member === selectedMember)?.average_rank.toFixed(2) || 'N/A'
+              : currentWeekData.find(r => r.member === selectedMember)?.average_rank.toFixed(2) ?? 'N/A'
             }
           </CardContent>
         </Card>
@@ -130,14 +146,14 @@ const Dashboard = () => {
           <CardContent className="text-3xl font-bold">
             {selectedMember === 'all'
               ? currentWeekData.reduce((acc, curr) => acc + curr.total_votes, 0)
-              : currentWeekData.find(r => r.member === selectedMember)?.total_votes || 0
+              : currentWeekData.find(r => r.member === selectedMember)?.total_votes ?? 0
             }
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <RankingTrends data={filteredData || []} />
+        <RankingTrends data={filteredData} />
         <RankingSummary data={currentWeekData} />
       </div>
     </div>
