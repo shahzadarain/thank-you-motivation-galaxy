@@ -17,6 +17,9 @@ const Auth = () => {
     try {
       setLoading(true);
       if (code === ACCESS_CODE) {
+        // Set the authentication flag in sessionStorage
+        sessionStorage.setItem('isAuthenticated', 'true');
+        
         navigate('/');
         toast({
           title: "Success",
