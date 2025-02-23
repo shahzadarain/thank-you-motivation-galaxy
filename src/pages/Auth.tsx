@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const ACCESS_CODE = 'dag2025';
 
@@ -13,18 +14,44 @@ const Auth = () => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Check if user is already authenticated on component mount
+  useEffect(() => {
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+    }
+  };
+
   const handleLogin = async () => {
     try {
       setLoading(true);
       if (code === ACCESS_CODE) {
+        // Create anonymous session with Supabase
+        const { error } = await supabase.auth.signInWithPassword({
+          email: `anonymous${Date.now()}@example.com`,
+          password: ACCESS_CODE,
+        });
+
+        if (error) throw error;
+
         // Set the authentication flag in sessionStorage
         sessionStorage.setItem('isAuthenticated', 'true');
         
-        navigate('/');
         toast({
           title: "Success",
           description: "Logged in successfully",
         });
+
+        // Navigate to home page after successful login
+        navigate('/');
       } else {
         throw new Error('Invalid access code');
       }
