@@ -34,8 +34,9 @@ const Auth = () => {
     try {
       setLoading(true);
       if (code === ACCESS_CODE) {
-        // Create anonymous session with Supabase
-        const email = `anonymous${Date.now()}@example.com`;
+        // Create anonymous session with Supabase using a valid email format
+        const timestamp = Date.now();
+        const email = `anonymous.${timestamp}@temp-mail.org`;
         
         // First sign up the user
         const { error: signUpError } = await supabase.auth.signUp({
