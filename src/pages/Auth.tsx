@@ -16,7 +16,7 @@ const Auth = () => {
   useEffect(() => {
     const isAuthenticated = sessionStorage.getItem('isAuthenticated');
     if (isAuthenticated === 'true') {
-      navigate('/');
+      navigate('/', { replace: true }); // Use replace to prevent going back to auth page
     }
   }, [navigate]);
 
@@ -46,7 +46,7 @@ const Auth = () => {
         description: "Access granted",
       });
 
-      navigate('/');
+      navigate('/', { replace: true }); // Use replace to prevent going back to auth page
     } catch (error: any) {
       toast({
         title: "Error",
