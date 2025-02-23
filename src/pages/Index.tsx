@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { questions } from '@/constants/questions';
 import QuestionForm from '@/components/QuestionForm';
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import FunFact from '@/components/FunFact';
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -80,9 +80,12 @@ const Index = () => {
                 className="space-y-6"
               >
                 <div className="mb-4">
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                    {currentQuestion.englishText}
-                  </h2>
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-2xl font-semibold text-gray-900">
+                      {currentQuestion.englishText}
+                    </h2>
+                    <FunFact questionNumber={currentStep + 1} />
+                  </div>
                   <h2 className="text-xl font-semibold text-gray-800 text-right font-arabic">
                     {currentQuestion.arabicText}
                   </h2>
