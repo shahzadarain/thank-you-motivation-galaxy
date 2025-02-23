@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/Dashboard";
+import Navbar from "./components/Navbar";
 
 const queryClient = new QueryClient();
 
@@ -27,18 +29,26 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="min-h-screen bg-gray-50">
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="*"
+              element={
+                <ProtectedRoute>
+                  <>
+                    <Navbar />
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
