@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import RankingTrends from '@/components/dashboard/RankingTrends';
 import RankingSummary from '@/components/dashboard/RankingSummary';
 import DateRangeFilter from '@/components/dashboard/DateRangeFilter';
-import { subWeeks } from 'date-fns';
+import { subMonths } from 'date-fns';
 import { Json } from '@/integrations/supabase/types';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -53,17 +54,17 @@ function isValidSummaryData(data: unknown): data is { rankings: RankingData[] } 
 }
 
 const Dashboard = () => {
-  // Initialize with a wider date range to ensure we catch our sample data
-  const [startDate, setStartDate] = useState(new Date(2024, 0, 1)); // January 1, 2024
-  const [endDate, setEndDate] = useState(new Date(2024, 11, 31)); // December 31, 2024
+  // Initialize with last 3 months of data
+  const [startDate, setStartDate] = useState(subMonths(new Date(), 3));
+  const [endDate, setEndDate] = useState(new Date());
   const [selectedMember, setSelectedMember] = useState<string>('all');
   const { toast } = useToast();
 
   const { data: rankingData, isLoading, error } = useQuery<WeeklySummary[]>({
     queryKey: ['rankings', startDate, endDate],
     queryFn: async () => {
-      console.log('Fetching rankings data...'); // Debug log
-      console.log('Date range:', { startDate, endDate }); // Debug log for date range
+      console.log('Fetching rankings data...');
+      console.log('Date range:', { startDate, endDate });
 
       const { data, error } = await supabase
         .from('weekly_rankings_summary')
