@@ -21,30 +21,16 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkUser();
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        navigate('/auth');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    checkAuthentication();
   }, [navigate]);
 
-  const checkUser = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/auth');
-      }
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error checking user:', error);
-      navigate('/auth');
+  const checkAuthentication = () => {
+    const isAuthenticated = sessionStorage.getItem('isAuthenticated');
+    if (!isAuthenticated || isAuthenticated !== 'true') {
+      navigate('/auth', { replace: true });
+      return;
     }
+    setIsLoading(false);
   };
 
   const currentQuestion = questions[currentStep];
@@ -81,8 +67,9 @@ const Index = () => {
     const year = date.getFullYear();
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // First check if authenticated
+      const isAuthenticated = sessionStorage.getItem('isAuthenticated');
+      if (!isAuthenticated || isAuthenticated !== 'true') {
         toast({
           title: "Authentication Error",
           description: "Please log in to submit feedback.",
@@ -96,7 +83,7 @@ const Index = () => {
         .from('team_feedback')
         .insert([
           {
-            user_id: user.id,
+            user_id: 'anonymous', // Since we're using access code auth
             week_number: weekNumber,
             year: year,
             responses: answers
