@@ -15,6 +15,7 @@ import RankingSummary from '@/components/dashboard/RankingSummary';
 import DateRangeFilter from '@/components/dashboard/DateRangeFilter';
 import { subWeeks } from 'date-fns';
 import { Json } from '@/integrations/supabase/types';
+import { useToast } from '@/components/ui/use-toast';
 
 interface RankingData {
   member: string;
@@ -40,7 +41,6 @@ interface SupabaseWeeklySummary {
   summary_data: Json;
 }
 
-// Type guard to check if the object is a valid summary data structure
 function isValidSummaryData(data: unknown): data is { rankings: RankingData[] } {
   if (!data || typeof data !== 'object') return false;
   const obj = data as any;
@@ -57,10 +57,12 @@ const Dashboard = () => {
   const [startDate, setStartDate] = useState(subWeeks(new Date(), 4));
   const [endDate, setEndDate] = useState(new Date());
   const [selectedMember, setSelectedMember] = useState<string>('all');
+  const { toast } = useToast();
 
-  const { data: rankingData, isLoading } = useQuery<WeeklySummary[]>({
+  const { data: rankingData, isLoading, error } = useQuery<WeeklySummary[]>({
     queryKey: ['rankings', startDate, endDate],
     queryFn: async () => {
+      console.log('Fetching rankings data...'); // Debug log
       const { data, error } = await supabase
         .from('weekly_rankings_summary')
         .select('*')
@@ -68,7 +70,17 @@ const Dashboard = () => {
         .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase query error:', error); // Debug log
+        toast({
+          variant: "destructive",
+          title: "Error loading dashboard data",
+          description: error.message
+        });
+        throw error;
+      }
+
+      console.log('Received data:', data); // Debug log
 
       // Transform the data to match our WeeklySummary interface
       return (data as SupabaseWeeklySummary[]).map(item => {
@@ -100,7 +112,28 @@ const Dashboard = () => {
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-96">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error Loading Dashboard</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-500">
+              There was an error loading the dashboard data. Please try again later.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const teamMembers = Array.from(
