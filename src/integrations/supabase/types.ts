@@ -482,6 +482,33 @@ export type Database = {
           },
         ]
       }
+      team_feedback: {
+        Row: {
+          id: string
+          responses: Json
+          submitted_at: string | null
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Insert: {
+          id?: string
+          responses: Json
+          submitted_at?: string | null
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Update: {
+          id?: string
+          responses?: Json
+          submitted_at?: string | null
+          user_id?: string
+          week_number?: number
+          year?: number
+        }
+        Relationships: []
+      }
       un_jobs: {
         Row: {
           created_at: string | null
@@ -584,12 +611,45 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_rankings_summary: {
+        Row: {
+          created_at: string | null
+          id: string
+          summary_data: Json
+          week_number: number
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          summary_data: Json
+          week_number: number
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          summary_data?: Json
+          week_number?: number
+          year?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_weekly_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      has_submitted_this_week: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"
