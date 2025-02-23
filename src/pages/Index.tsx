@@ -9,14 +9,63 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Question {
   id: number;
   englishText: string;
   arabicText: string;
-  type: 'text' | 'radio' | 'rating';
+  type: 'text' | 'radio' | 'rating' | 'ranking';
   options?: string[];
+  teamMembers?: string[];
 }
+
+interface SortableItemProps {
+  id: string;
+  children: React.ReactNode;
+}
+
+const SortableItem = ({ id, children }: SortableItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="bg-white p-3 mb-2 rounded-lg shadow-sm cursor-move hover:bg-gray-50 transition-colors duration-200"
+    >
+      {children}
+    </div>
+  );
+};
 
 const questions: Question[] = [
   {
@@ -104,13 +153,27 @@ const questions: Question[] = [
     englishText: "Is there anything else from this week that you believe we should discuss to enhance our team performance?",
     arabicText: "هل هناك أي شيء آخر من هذا الأسبوع تعتقد أنه يجب أن نناقشه لتحسين أداء فريقنا؟",
     type: 'text'
+  },
+  {
+    id: 15,
+    englishText: "Rank your teammates based on who you enjoy working with the most (drag to reorder)",
+    arabicText: "رتب زملائك حسب من تستمتع بالعمل معهم أكثر (اسحب لإعادة الترتيب)",
+    type: 'ranking',
+    teamMembers: ['Shahzad', 'Dana', 'Iyad', 'Alaa', 'Ahmed', 'Joey', 'Khalid', 'Maysa', 'Jaber']
   }
 ];
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
   const { toast } = useToast();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const progress = ((currentStep + 1) / questions.length) * 100;
 
@@ -137,6 +200,28 @@ const Index = () => {
     });
     setAnswers({});
     setCurrentStep(0);
+  };
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    
+    if (active.id !== over.id) {
+      const oldIndex = (answers[currentQuestion.id] as string[] || currentQuestion.teamMembers)
+        .indexOf(active.id);
+      const newIndex = (answers[currentQuestion.id] as string[] || currentQuestion.teamMembers)
+        .indexOf(over.id);
+      
+      const newOrder = arrayMove(
+        answers[currentQuestion.id] as string[] || currentQuestion.teamMembers || [],
+        oldIndex,
+        newIndex
+      );
+      
+      setAnswers(prev => ({
+        ...prev,
+        [currentQuestion.id]: newOrder
+      }));
+    }
   };
 
   const currentQuestion = questions[currentStep];
@@ -168,7 +253,7 @@ const Index = () => {
             <div className="space-y-4">
               {currentQuestion.type === 'text' ? (
                 <Textarea
-                  value={answers[currentQuestion.id] || ''}
+                  value={answers[currentQuestion.id] as string || ''}
                   onChange={(e) => setAnswers(prev => ({
                     ...prev,
                     [currentQuestion.id]: e.target.value
@@ -178,7 +263,7 @@ const Index = () => {
                 />
               ) : currentQuestion.type === 'radio' && currentQuestion.options ? (
                 <RadioGroup
-                  value={answers[currentQuestion.id]}
+                  value={answers[currentQuestion.id] as string}
                   onValueChange={(value) => setAnswers(prev => ({
                     ...prev,
                     [currentQuestion.id]: value
@@ -191,6 +276,28 @@ const Index = () => {
                     </div>
                   ))}
                 </RadioGroup>
+              ) : currentQuestion.type === 'ranking' && currentQuestion.teamMembers ? (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={answers[currentQuestion.id] as string[] || currentQuestion.teamMembers}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {(answers[currentQuestion.id] as string[] || currentQuestion.teamMembers).map((member, index) => (
+                        <SortableItem key={member} id={member}>
+                          <div className="flex items-center">
+                            <span className="mr-3 text-gray-500">{index + 1}.</span>
+                            <span>{member}</span>
+                          </div>
+                        </SortableItem>
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                </div>
               ) : null}
             </div>
 
