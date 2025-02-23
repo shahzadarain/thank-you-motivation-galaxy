@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,28 +12,11 @@ const Auth = () => {
   const { toast } = useToast();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/');
-      }
-    };
-    checkSession();
-  }, [navigate]);
 
   const handleLogin = async () => {
     try {
       setLoading(true);
       if (code === ACCESS_CODE) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: 'test@example.com',
-          password: 'testpassword123',
-        });
-
-        if (error) throw error;
-        
         navigate('/');
         toast({
           title: "Success",
