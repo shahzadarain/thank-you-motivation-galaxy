@@ -35,12 +35,23 @@ const Auth = () => {
       setLoading(true);
       if (code === ACCESS_CODE) {
         // Create anonymous session with Supabase
-        const { error } = await supabase.auth.signInWithPassword({
-          email: `anonymous${Date.now()}@example.com`,
+        const email = `anonymous${Date.now()}@example.com`;
+        
+        // First sign up the user
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: email,
           password: ACCESS_CODE,
         });
 
-        if (error) throw error;
+        if (signUpError) throw signUpError;
+
+        // Then sign in
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: ACCESS_CODE,
+        });
+
+        if (signInError) throw signInError;
 
         // Set the authentication flag in sessionStorage
         sessionStorage.setItem('isAuthenticated', 'true');
