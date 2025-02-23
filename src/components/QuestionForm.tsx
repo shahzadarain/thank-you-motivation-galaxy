@@ -13,10 +13,12 @@ import {
 } from '@dnd-kit/core';
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { Question } from '@/types/question';
 import SortableItem from './SortableItem';
+import { motion } from "framer-motion";
 
 interface QuestionFormProps {
   question: Question;
@@ -40,34 +42,59 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
   if (question.type === 'text') {
     return (
-      <Textarea
-        value={answer as string || ''}
-        onChange={(e) => onAnswerChange(e.target.value)}
-        className="min-h-[100px]"
-        placeholder="Type your answer here..."
-      />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="glass-card p-6 rounded-xl"
+      >
+        <Textarea
+          value={answer as string || ''}
+          onChange={(e) => onAnswerChange(e.target.value)}
+          className="min-h-[100px] bg-white/50 backdrop-blur-sm border-2 focus:border-primary transition-all duration-300"
+          placeholder="Type your answer here..."
+        />
+      </motion.div>
     );
   }
 
   if (question.type === 'radio' && question.options) {
     return (
-      <RadioGroup
-        value={answer as string}
-        onValueChange={onAnswerChange}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="glass-card p-6 rounded-xl space-y-4"
       >
-        {question.options.map((option) => (
-          <div key={option} className="flex items-center space-x-2">
-            <RadioGroupItem value={option} id={option} />
-            <Label htmlFor={option}>{option}</Label>
-          </div>
-        ))}
-      </RadioGroup>
+        <RadioGroup
+          value={answer as string}
+          onValueChange={onAnswerChange}
+          className="space-y-4"
+        >
+          {question.options.map((option, index) => (
+            <motion.div
+              key={option}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="flex items-center space-x-2 p-4 hover:bg-white/50 rounded-lg transition-colors duration-300"
+            >
+              <RadioGroupItem value={option} id={option} />
+              <Label htmlFor={option} className="cursor-pointer text-lg">{option}</Label>
+            </motion.div>
+          ))}
+        </RadioGroup>
+      </motion.div>
     );
   }
 
   if (question.type === 'ranking' && question.teamMembers && onDragEnd) {
     return (
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-card p-6 rounded-xl"
+      >
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -80,14 +107,14 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             {(answer as string[] || question.teamMembers).map((member, index) => (
               <SortableItem key={member} id={member}>
                 <div className="flex items-center">
-                  <span className="mr-3 text-gray-500">{index + 1}.</span>
+                  <span className="mr-3 text-primary font-bold">{index + 1}.</span>
                   <span>{member}</span>
                 </div>
               </SortableItem>
             ))}
           </SortableContext>
         </DndContext>
-      </div>
+      </motion.div>
     );
   }
 
