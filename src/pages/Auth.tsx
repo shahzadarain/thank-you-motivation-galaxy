@@ -6,71 +6,47 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-const ACCESS_CODE = 'dag2025';
-
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Check if user is already authenticated on component mount
+  // Check if already authenticated
   useEffect(() => {
-    checkUser();
-  }, []);
-
-  const checkUser = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        navigate('/');
-      }
-    } catch (error) {
-      console.error('Error checking user:', error);
+    const isAuthenticated = sessionStorage.getItem('isAuthenticated');
+    if (isAuthenticated === 'true') {
+      navigate('/');
     }
-  };
+  }, [navigate]);
 
   const handleLogin = async () => {
     try {
       setLoading(true);
-      if (code === ACCESS_CODE) {
-        // Create anonymous session with Supabase using a valid email format
-        const timestamp = Date.now();
-        const email = `anonymous.${timestamp}@temp-mail.org`;
-        
-        // First try to sign up
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: email,
-          password: ACCESS_CODE,
-        });
 
-        if (signUpError) throw signUpError;
+      // Check if the code exists in the database
+      const { data, error } = await supabase
+        .from('access_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('is_active', true)
+        .single();
 
-        // Always attempt to sign in explicitly
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: ACCESS_CODE,
-        });
+      if (error) throw error;
 
-        if (signInError) throw signInError;
-
-        if (!signInData.session) {
-          throw new Error('Failed to create session. Please try again.');
-        }
-
-        // Set the authentication flag in sessionStorage
-        sessionStorage.setItem('isAuthenticated', 'true');
-        
-        toast({
-          title: "Success",
-          description: "Logged in successfully",
-        });
-
-        // Navigate to home page after successful login
-        navigate('/');
-      } else {
+      if (!data) {
         throw new Error('Invalid access code');
       }
+
+      // If we reach here, the code is valid
+      sessionStorage.setItem('isAuthenticated', 'true');
+      
+      toast({
+        title: "Success",
+        description: "Access granted",
+      });
+
+      navigate('/');
     } catch (error: any) {
       toast({
         title: "Error",
